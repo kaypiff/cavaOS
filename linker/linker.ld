@@ -1,19 +1,19 @@
 
 ENTRY(kernel_start)
-OUTPUT_FORMAT(elf32_i386)
+OUTPUT_FORMAT(elf32-i386)
 OUTPUT_ARCH(i386:i386)
 
 SECTIONS
 {
     . = 1M;
 
-    .text : {
+    .text : ALIGN(4K) {
         *(.multiboot)
         *(.text*)
         *(.rodata)
     }
 
-    .data : {
+    .data : ALIGN(4K) {
         ctors_begin = .;
         KEEP(*(.init_array))
         KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*)))
@@ -22,7 +22,7 @@ SECTIONS
         *(.data)
     }
 
-    .bss : {
+    .bss : ALIGN(4K) {
         *(.bss)
     }
 
