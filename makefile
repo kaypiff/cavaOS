@@ -40,9 +40,12 @@ $(KERNEL) : $(OBJECTS) $(HEADERS)
 	mkdir -p $(dir $@)
 	$(LD) $(FLAGS_LD) -o $@ $(OBJECTS)
 	
-.PHONY: all clean
+.PHONY: all clean run
 
 all: $(KERNEL)
+
+run: all
+	qemu-system-i386 -kernel $(KERNEL)
 
 clean:
 	rm -rf build/* $(KERNEL)
