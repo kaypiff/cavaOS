@@ -14,11 +14,11 @@ FLAGS_LD  := -T linker/linker.ld -nostdlib
 FLAGS_AS  := -f elf32
 
 # File autodetect
-SRC_C   := $(wildcard src/*.c)
-SRC_CXX := $(wildcard src/*.cc)
-SRC_ASM := $(wildcard src/*.s)
+SRC_C   := $(shell find src -name '*.c')
+SRC_CXX := $(shell find src -name '*.cc')
+SRC_ASM := $(shell find src -name '*.s')
 
-HEADERS := $(wildcard include/*)
+HEADERS := $(shell find include -type f)
 SOURCES := $(SRC_C) $(SRC_CXX) $(SRC_ASM)
 OBJECTS := $(patsubst src/%,build/%.o,$(SOURCES))
 
@@ -38,7 +38,7 @@ build/%.s.o : src/%.s
 # Kernel
 $(KERNEL) : $(OBJECTS) $(HEADERS)
 	mkdir -p $(dir $@)
-	$(LD) $(FLAGS_LD) -o $@ $<
+	$(LD) $(FLAGS_LD) -o $@ $(OBJECTS)
 	
 .PHONY: all clean
 
