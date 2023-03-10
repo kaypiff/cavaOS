@@ -5,7 +5,7 @@ An operating system for running Cava applications. WIP
 
 ### Hello, World!
 - [x] Bootloader
-- [ ] Formatted printing
+- [x] Formatted printing
 - [x] GDT set properly
 - [x] C++ Constructors/Destructors called
 
