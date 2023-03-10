@@ -9,8 +9,8 @@ LD  := i686-elf-gcc
 AS  := nasm
 
 # Flags
-FLAGS_CC  := -O2 -Wall -nostdlib
-FLAGS_CXX := -O2 -Wall -fno-exceptions -fno-rtti -nostdlib -fno-use-cxa-atexit -fno-builtin -fno-leading-underscore
+FLAGS_CC  := -O2 -Wall -nostdlib -Iinclude -std=c99
+FLAGS_CXX := -O2 -Wall -fno-exceptions -fno-rtti -nostdlib -fno-use-cxa-atexit -fno-builtin -fno-leading-underscore -Iinclude -std=c++20
 FLAGS_LD  := -T linker/linker.ld -nostdlib
 FLAGS_AS  := -f elf32
 
