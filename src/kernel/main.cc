@@ -1,5 +1,6 @@
 
 #include <sys/gdt.hh>
+#include <termio.hh>
 
 using namespace cava;
 
@@ -30,5 +31,7 @@ extern "C" void kernel_main()
 {
     call_constructors();
     init_gdt();
+
+    printf("Hello, World!");
     for (;;);
 }
