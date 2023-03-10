@@ -1,6 +1,12 @@
 # cavaOS
 An operating system for running Cava applications. WIP
 
+## Dependencies
+- `i686-elf-*` [GCC Cross Compiler](https://wiki.osdev.org/GCC_Cross-Compiler)
+- `nasm` [Netwide Assembler](https://nasm.us)
+- `libisoburn` for grub-mkrescue
+- `grub-legacy` (can work with grub2 with small tweaks to the makefile)
+
 ## Milestones
 
 ### Hello, World!
