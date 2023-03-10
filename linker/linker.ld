@@ -11,6 +11,8 @@ SECTIONS
         . = ALIGN(8);
 		*(.multiboot)
         *(.text*)
+        *(.init)
+        *(.fini)
         *(.rodata)
     }
 

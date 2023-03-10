@@ -6,15 +6,6 @@ using namespace cava;
 
 sys::gdt kernel_gdt;
 
-/* Call global C++ constructors */
-extern "C" void (*ctors_begin)(void);
-extern "C" void (*ctors_end)(void);
-void call_constructors()
-{
-    for (auto ctor = ctors_begin; ctor != ctors_end; ctor++)
-        ctor();
-}
-
 void init_gdt()
 {
     /* Null, Kernel Code, Kernel Data, User Code, User Data */
@@ -29,7 +20,6 @@ void init_gdt()
 
 extern "C" void kernel_main()
 {
-    call_constructors();
     init_gdt();
 
     printf("Hello, World!");

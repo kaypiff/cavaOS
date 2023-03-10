@@ -41,11 +41,13 @@ stack_top:
 ; Code
 section .text
 extern kernel_main
+extern _init
 global kernel_start
 kernel_start:
     mov esp, stack_top
     push ebx
     push eax
+    call _init
     call kernel_main
     add esp, 8
     cli

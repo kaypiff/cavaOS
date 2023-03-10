@@ -19,9 +19,14 @@ SRC_C   := $(shell find src -name '*.c')
 SRC_CXX := $(shell find src -name '*.cc')
 SRC_ASM := $(shell find src -name '*.s')
 
+CRTI     := ctors/crti.o
+CRTBEGIN := $(shell $(CC) $(FLAGS_CC) -print-file-name=crtbegin.o)
+CRTEND   := $(shell $(CC) $(FLAGS_CC) -print-file-name=crtend.o)
+CRTN     := ctors/crtn.o
+
 HEADERS := $(shell find include -type f)
 SOURCES := $(SRC_C) $(SRC_CXX) $(SRC_ASM)
-OBJECTS := $(patsubst src/%,build/%.o,$(SOURCES))
+OBJECTS := $(CRTI) $(CRTBEGIN) $(patsubst src/%,build/%.o,$(SOURCES)) $(CRTEND) $(CRTN)
 
 # Objects
 build/%.c.o : src/%.c
@@ -34,6 +39,9 @@ build/%.cc.o : src/%.cc
 
 build/%.s.o : src/%.s
 	mkdir -p $(dir $@)
+	$(AS) $(FLAGS_AS) -o $@ $<
+
+ctors/%.o : ctors/%.s
 	$(AS) $(FLAGS_AS) -o $@ $<
 
 # Kernel
