@@ -4,7 +4,7 @@
 extern "C" void load_gdt(uint16_t limit, uint8_t *base);
 
 namespace cava::sys {
-    void gdt::encode(uint32_t base, uint16_t limit, uint8_t access, uint8_t flags)
+    void gdt::encode(uint32_t base, uint32_t limit, uint8_t access, uint8_t flags)
     {
         if (limit > 0xfffff)
             return; /* TODO: kernel error */

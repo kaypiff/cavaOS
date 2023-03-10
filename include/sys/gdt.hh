@@ -11,7 +11,7 @@ namespace cava::sys {
         uint8_t m_gdt[GDT_ENTRY_SIZE * MAX_GDT_ENTRIES];
         uint8_t m_num_entries;
     public:
-        void encode(uint32_t base, uint16_t limit, uint8_t access, uint8_t flags);
+        void encode(uint32_t base, uint32_t limit, uint8_t access, uint8_t flags);
         void load();
     };
 }
