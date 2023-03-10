@@ -1,16 +1,33 @@
 ; Multiboot constants
-MBALIGN equ 1<<0
-MEMINFO equ 1<<1
-MBFLAGS equ (MBALIGN) | (MEMINFO)
-MBMAGIC equ 0x1badb002
-MBCHECK equ -(MBMAGIC + MBFLAGS)
+MBMAGIC equ 0xE85250D6                                  ; Multiboot2 magic
+MBARCH  equ 0                                           ; Protected mode i386
+MBSIZE  equ (multiboot_header.end - multiboot_header)   ; Total header size
+MBCHECK equ -(MBMAGIC + MBARCH + MBSIZE)                ; Checksum
 
 ; Multiboot header
 section .multiboot
-align 4
+align 8
+multiboot_header:
+; Magic bytes
     dd MBMAGIC
-    dd MBFLAGS
+    dd MBARCH
+    dd MBSIZE
     dd MBCHECK
+    
+; Information request
+.inforeq:
+    dw 1    ; Type = INFORMATION REQUEST
+    dw 0    ; Flags
+    dd (.inforeq_end - .inforeq)    ; Size
+
+    dd 6    ; Memory map
+.inforeq_end:
+
+; Terminate tag (end of header)
+    dw 0
+    dw 0
+    dd 8
+.end:
 
 ; Stack
 section .bss
@@ -21,9 +38,14 @@ stack_top:
 
 ; Code
 section .text
+extern kernel_main
 global kernel_start
 kernel_start:
     mov esp, stack_top
+    push ebx
+    push eax
+    call kernel_main
+    add esp, 8
     cli
 .forever:
     hlt
