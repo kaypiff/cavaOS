@@ -23,6 +23,8 @@ multiboot_header:
     dd 6    ; Memory map
 .inforeq_end:
 
+    dd 0    ; Padding for alignment
+
 ; Terminate tag (end of header)
     dw 0
     dw 0
