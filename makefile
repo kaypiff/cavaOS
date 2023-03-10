@@ -1,5 +1,6 @@
 
 KERNEL := kernel.bin
+ISO    := cavaos.iso
 
 # Toolchain
 CC  := i686-elf-gcc
@@ -42,10 +43,14 @@ $(KERNEL) : $(OBJECTS) $(HEADERS)
 	
 .PHONY: all clean run
 
-all: $(KERNEL)
+$(ISO): $(KERNEL)
+	cp $< dist/boot/kernel.bin
+	grub-mkrescue -o $@ dist
+
+all: $(ISO)
 
 run: all
-	qemu-system-i386 -kernel $(KERNEL)
+	qemu-system-i386 -cdrom $(ISO)
 
 clean:
 	rm -rf build/* $(KERNEL)

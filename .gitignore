@@ -4,4 +4,3 @@ kernel.bin
 
 # Disk images
 *.iso
-dist/*
