@@ -1,11 +1,11 @@
 
-#include <mman.hh>
+#include <memory.hh>
 
 #define RED 0
 #define BLACK 1
 
 namespace cava {
-        node *mman::new_node(void *data, size_t size, bool used)
+        mman::rbt::node *mman::rbt::new_node(void *data, size_t size, bool used)
         {
             uint8_t bitmap_entry;
 
@@ -22,9 +22,8 @@ namespace cava {
                     m_node_bitmap[i] |= bitmask;
                     
                     auto& created_node = m_node_buffer[i * 8 + j];
-                    created_node.data = data;
+                    created_node.dataptr = data;
                     created_node.size = size;
-                    created_node.used = used;
                     return &created_node;
                 }
             }
@@ -32,7 +31,7 @@ namespace cava {
             return nullptr;
         }
 
-        void mman::del_node(node *n)
+        void mman::rbt::del_node(mman::rbt::node *n)
         {
             auto offset = (size_t)(n - m_node_buffer);
             auto i = offset >> 3;
@@ -40,7 +39,7 @@ namespace cava {
             m_node_bitmap[i] &= ~(0x80 >> j);
         }
 
-        node *mman::rotate_left(node *n)
+        mman::rbt::node *mman::rbt::rotate_left(mman::rbt::node *n)
         {
             node *x, *y;
 
@@ -57,7 +56,7 @@ namespace cava {
             return x;
         }
 
-        node *mman::rotate_right(node *n)
+        mman::rbt::node *mman::rbt::rotate_right(mman::rbt::node *n)
         {
             node *x, *y;
 
@@ -74,7 +73,7 @@ namespace cava {
             return x;
         }
 
-        node *mman::do_insert(node *root, void *data, size_t size, bool used)
+        mman::rbt::node *mman::rbt::do_insert(mman::rbt::node *root, void *data, size_t size, bool used)
         {
             bool red_red_conflict = false;
 
@@ -117,7 +116,7 @@ namespace cava {
                 root->left->colour = RED;
                 m_rl = false;
             } else if (m_lr) {
-                root->left = rotate_left(root_left);
+                root->left = rotate_left(root->left);
                 root->left->parent = root;
                 root = rotate_right(root);
                 root->colour = BLACK;
@@ -157,7 +156,7 @@ namespace cava {
             return root;
         }
 
-        node *mman::insert(void *data, size_t size, bool used)
+        mman::rbt::node *mman::rbt::insert(void *data, size_t size, bool used)
         {
             if (m_root) {
                 m_root = do_insert(m_root, data, size, used);
@@ -165,9 +164,11 @@ namespace cava {
                 m_root = new_node(data, size, used);
                 m_root->colour = BLACK;
             }
+
+            return m_root;
         }
         
-        mman::mman()
+        mman::rbt::rbt()
         : m_root { NULL }
         , m_ll { false }
         , m_rr { false }
@@ -179,8 +180,4 @@ namespace cava {
             for (size_t i = 0; i < NODE_BITMAP_SIZE; i++)
                 m_node_bitmap[i] = 0;
         }
-
-        void *mman::malloc(size_t size);
-        void mman::free(void *ptr);
-        void *mman::realloc(void *ptr, size_t size);
 }
