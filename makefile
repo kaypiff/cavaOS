@@ -3,10 +3,10 @@ KERNEL := kernel.bin
 ISO    := cavaos.iso
 
 # Toolchain
-CC  := i686-elf-gcc
-CXX := i686-elf-g++
-LD  := i686-elf-gcc
-AS  := nasm
+CC  := $(shell which i686-elf-gcc || (echo i686-elf-gcc not found in PATH! && exit 1))
+CXX := $(shell which i686-elf-g++ || (echo i686-elf-g++ not found in PATH! && exit 1))
+LD  := $(CC)
+AS  := $(shell which nasm || (echo nasm not found in PATH! && exit 1))
 
 # Flags
 FLAGS_CC  := -O2 -Wall -nostdlib -Iinclude -std=c99
@@ -48,7 +48,7 @@ ctors/%.o : ctors/%.s
 $(KERNEL) : $(OBJECTS) $(HEADERS)
 	mkdir -p $(dir $@)
 	$(LD) $(FLAGS_LD) -o $@ $(OBJECTS)
-	
+
 .PHONY: all clean run
 
 $(ISO): $(KERNEL)
