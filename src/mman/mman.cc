@@ -1,98 +1,186 @@
 
-#include <memory.hh>
+#include <mman.hh>
 
-namespace cava::mman {
-    
-    node *memory_manager::find_best_fit(size_t size) const
-    {
-        node *current;
-        int i;
+#define RED 0
+#define BLACK 1
 
-        for (i = m_node_count; i >= 0; i--) {
-            current = &m_node_buffer[MAX_ALLOC_NODES - i];
-            if (!current->used && current->size >= size)
-                return current;
-        }
-        
-        return nullptr;
-    }
+namespace cava {
+        node *mman::new_node(void *data, size_t size, bool used)
+        {
+            uint8_t bitmap_entry;
 
+            for (size_t i = 0; i < NODE_BITMAP_SIZE; i++) {
+                bitmap_entry = m_node_bitmap[i];
 
-    void memory_manager::sort_memory_by_size();
+                if (bitmap_entry == 0xff)
+                    continue;
+                
+                for (uint8_t bitmask = 0x80, j = 0; bitmask != 0; bitmask >>= 1, j++) {
+                    if (bitmap_entry & bitmask)
+                        continue;
+                    
+                    m_node_bitmap[i] |= bitmask;
+                    
+                    auto& created_node = m_node_buffer[i * 8 + j];
+                    created_node.data = data;
+                    created_node.size = size;
+                    created_node.used = used;
+                    return &created_node;
+                }
+            }
 
-    memory_manager::memory_manager()
-    : m_node_buffer {}
-    , m_node_count { 0 }
-    {
-    }
-
-    void *memory_manager::malloc(size_t size)
-    {
-        size_t a, b, i;
-        bool smaller_used;
-        node *best_fit;
-        void *result;
-
-        if (m_node_count >= MAX_ALLOC_NODES)
             return nullptr;
-
-        best_fit = find_best_fit(size);
-
-        if (!best_fit)
-            return nullptr;
-        
-        if (best_fit->size - size < MAX_LEFTOVER_SPACE) {
-            best_fit->used = 1;
-            return best_fit->memory;
         }
 
-        /* Block sizes after the split */
-        a = size;
-        b = best_fit->size - size;
-        
-        smaller_used = true;
-        
-        if (a > b) {
-            a = b;
-            b = size;
-            smaller_used = false;
+        void mman::del_node(node *n)
+        {
+            auto offset = (size_t)(n - m_node_buffer);
+            auto i = offset >> 3;
+            auto j = offset & 7;
+            m_node_bitmap[i] &= ~(0x80 >> j);
         }
 
-        /* O(n) sorting of memory. A special case when splitting blocks. */
+        node *mman::rotate_left(node *n)
+        {
+            node *x, *y;
 
-        i = MAX_ALLOC_NODES - m_node_count;
+            x = n->right;
+            y = x->left;
 
-        /* Move all blocks smaller than A to the left */
-        while (m_node_buffer[i].size < a && i < MAX_ALLOC_NODES) {
-            m_node_buffer[i - 1] = m_node_buffer[i];
-            i++;
+            x->left = n;
+            n->right = y;
+            n->parent = x;
+
+            if (y)
+                y->parent = n;
+            
+            return x;
         }
 
-        if (i >= MAX_ALLOC_NODES)
-            return nullptr;
+        node *mman::rotate_right(node *n)
+        {
+            node *x, *y;
+
+            x = n->left;
+            y = x->right;
+
+            x->right = n;
+            n->left = y;
+            n->parent = x;
+
+            if (y)
+                y->parent = n;
+            
+            return x;
+        }
+
+        node *mman::do_insert(node *root, void *data, size_t size, bool used)
+        {
+            bool red_red_conflict = false;
+
+            if (!root)
+                return new_node(data, size, used);
+            
+            if (size < root->size) {
+                root->left = do_insert(root->left, data, size, used);
+                root->left->parent = root;
+
+                if (root != m_root) {
+                    if (root->colour == RED && root->left->colour == RED)
+                        red_red_conflict = true;
+                }
+            } else {
+                root->right = do_insert(root->right, data, size, used);
+                root->right->parent = root;
+
+                if (root != m_root) {
+                    if (root->colour == RED && root->right->colour == RED)
+                        red_red_conflict = true;
+                }
+            }
+
+            if (m_ll) {
+                root = rotate_left(root);
+                root->colour = BLACK;
+                root->left->colour = RED;
+                m_ll = false;
+            } else if (m_rr) {
+                root = rotate_right(root);
+                root->colour = BLACK;
+                root->left->colour = RED;
+                m_rr = false;
+            } else if (m_rl) {
+                root->right = rotate_right(root->right);
+                root->right->parent = root;
+                root = rotate_left(root);
+                root->colour = BLACK;
+                root->left->colour = RED;
+                m_rl = false;
+            } else if (m_lr) {
+                root->left = rotate_left(root_left);
+                root->left->parent = root;
+                root = rotate_right(root);
+                root->colour = BLACK;
+                root->right->colour = RED;
+                m_lr = false;
+            }
+
+            if (!red_red_conflict)
+                return root;
+            
+            if (root->parent->right == root) {
+                if (!root->parent->left || root->parent->left->colour == BLACK) {
+                    if (root->left && root->left->colour == RED)
+                        m_rl = true;
+                    else if (root->right && root->right->colour == RED)
+                        m_lr = true;
+                } else {
+                    root->parent->left->colour = BLACK;
+                    root->colour = BLACK;
+                    if (root->parent != m_root)
+                        root->parent->colour = RED;
+                }
+            } else {        
+                if (!root->parent->right || root->parent->right->colour == BLACK) {
+                    if (root->left && root->left->colour == RED)
+                        m_rr = true;
+                    else if (root->right && root->right->colour == RED)
+                        m_lr = true;
+                } else {
+                    root->parent->right->colour = BLACK;
+                    root->colour = BLACK;
+                    if (root->parent != m_root)
+                        root->parent->colour = RED;
+                }
+            }
+
+            return root;
+        }
+
+        node *mman::insert(void *data, size_t size, bool used)
+        {
+            if (m_root) {
+                m_root = do_insert(m_root, data, size, used);
+            } else {
+                m_root = new_node(data, size, used);
+                m_root->colour = BLACK;
+            }
+        }
         
-        m_node_buffer[i] = {
-            .memory = best_fit->memory,
-            .size = a,
-            .used = smaller_used,
-        };
+        mman::mman()
+        : m_root { NULL }
+        , m_ll { false }
+        , m_rr { false }
+        , m_lr { false }
+        , m_rl { false }
+        , m_node_buffer {}
+        , m_node_bitmap {}
+        {
+            for (size_t i = 0; i < NODE_BITMAP_SIZE; i++)
+                m_node_bitmap[i] = 0;
+        }
 
-        result = best_fit->memory;
-
-        best_fit->memory += a;
-        best_fit->size = b;
-        best_fit->used = !smaller_used;
-
-        if (!smaller_used)
-            result += a;
-        
-        node_count++;
-
-        return result;
-    }
-
-    void memory_manager::free(void *ptr)
-    {
-        
-    }
+        void *mman::malloc(size_t size);
+        void mman::free(void *ptr);
+        void *mman::realloc(void *ptr, size_t size);
 }
