@@ -11,26 +11,29 @@ SECTIONS
         . = ALIGN(8);
 		*(.multiboot)
         *(.text*)
-        *(.init)
-        *(.fini)
-        *(.rodata)
+        *(.gnu.linkonce.t*)
+    }
+
+    .rodata : ALIGN(4K) {
+        *(.rodata*)
+        *(.gnu.linkonce.r*)
     }
 
     .data : ALIGN(4K) {
-        ctors_begin = .;
-        KEEP(*(.init_array))
-        KEEP(*(SORT_BY_INIT_PRIORITY(.init_array.*)))
-        ctors_end = .;
-
         *(.data)
+        *(.gnu.linkonce.d*)
     }
 
     .bss : ALIGN(4K) {
+        start_bss = .;
         *(.bss)
+        *(COMMON)
+        *(.gnu.linkonce.b*)
+        end_bss = .;
     }
 
     /DISCARD/ : {
-        *(.fini_array*)
         *(.comment)
+        *(.eh_frame)
     }
 }
